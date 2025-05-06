@@ -450,10 +450,6 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
-    .date-display:hover {
-      transform: scale(1.02);
-    }
-
     .persian-numeric {
       font-size: 2.4rem;
       margin-bottom: 10px;
@@ -540,10 +536,6 @@
       animation: slideInToggle 0.3s ease-out;
     }
 
-    .converter-tab:hover {
-      background: rgba(248, 113, 113, 0.4);
-    }
-
     .converter-tab i {
       font-size: 1.2rem;
     }
@@ -596,15 +588,6 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(248, 113, 113, 0.6);
-    }
-
-    button i {
-      font-size: 1.2rem;
     }
 
     .server-button {
@@ -687,10 +670,6 @@
       box-shadow: 0 2px 10px rgba(248, 113, 113, 0.5);
     }
 
-    .tab-button:hover {
-      background: rgba(248, 113, 113, 0.4);
-    }
-
     .tab-button i {
       font-size: 1.2rem;
     }
@@ -712,7 +691,7 @@
       z-index: 1000;
     }
 
-    .theme-selector:hover {
+    .theme-selector:active {
       transform: rotate(20deg);
     }
 
@@ -745,7 +724,7 @@
       transition: background 0.2s;
     }
 
-    .theme-option:hover {
+    .theme-option:active {
       background: rgba(248, 113, 113, 0.4);
     }
 
@@ -756,16 +735,14 @@
       border-radius: 8px;
       border: 1px solid rgba(248, 113, 113, 0.3);
       text-align: center;
-      background: linear-gradient(45deg, #b91c1c, #ea580c);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #ffffff;
       margin-top: 16px;
-      opacity: 0.9;
     }
 
     .light-theme #convert-result p {
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(248, 113, 113, 0.3);
+      color: #000000;
     }
 
     @media (max-width: 400px) {
@@ -873,7 +850,7 @@
     }
   </style>
 </head>
-<body class="light-theme">
+<body class="dark-theme">
   <div class="background-shapes">
     <div class="circle"></div>
     <div class="circle"></div>
@@ -965,9 +942,6 @@
       { name: 'WorldTimeAPI', url: 'https://worldtimeapi.org/api/timezone/Asia/Tehran', dateKey: 'datetime', format: 'iso' },
       { name: 'HTTPTimeAPI', url: 'http://worldtimeapi.org/api/timezone/Asia/Tehran', dateKey: 'datetime', format: 'iso' },
       { name: 'TimeAPI', url: 'https://timeapi.io/api/Time/current/zone?timeZone=Asia/Tehran', dateKey: 'dateTime', format: 'iso' },
-      // { name: 'TimeZoneDB', url: 'https://api.timezonedb.com/v2.1/get-time-zone?key=YOUR_TIMEZONEDB_KEY&format=json&by=zone&zone=Asia/Tehran', dateKey: 'formatted', format: 'iso' },
-      // { name: 'ApiNinjas', url: 'https://api.api-ninjas.com/v1/worldtime?tz=Asia/Tehran', dateKey: 'datetime', format: 'custom', headers: { 'X-Api-Key': 'YOUR_API_KEY' } },
-      // { name: 'AbstractAPI', url: 'https://timezone.abstractapi.com/v1/current_time/?api_key=YOUR_ABSTRACTAPI_KEY&location=Asia/Tehran', dateKey: 'datetime', format: 'iso' }
     ];
 
     async function fetchDateFromServer(server, retries = 2) {
@@ -999,7 +973,6 @@
 
           if (isNaN(date.getTime())) throw new Error('Invalid date');
 
-          // Adjust for Asia/Tehran timezone (UTC+3:30) if server doesn't provide it
           if (!server.url.includes('Asia/Tehran')) {
             const tehranOffset = 3.5 * 60 * 60 * 1000;
             date = new Date(date.getTime() + tehranOffset);
@@ -1107,10 +1080,12 @@
     }
 
     function displayOnlineDate(date) {
-      const jalaliObj = jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+      const tehranDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Tehran' }));
+      tehranDate.setHours(0, 0, 0, 0);
+      const jalaliObj = jalaali.toJalaali(tehranDate.getFullYear(), tehranDate.getMonth() + 1, tehranDate.getDate());
       const display = document.getElementById('online-date-display');
       if (display) {
-        display.innerHTML = formatDate(jalaliObj, date);
+        display.innerHTML = formatDate(jalaliObj, tehranDate);
       } else {
         console.warn('Online date display element not found');
       }
@@ -1120,10 +1095,10 @@
       const type = document.querySelector('.converter-tab.active').getAttribute('onclick').match(/'([^']+)'/)[1];
       let result;
       if (type === 'gregorian-to-jalali') {
-        const gy = parseInt(document.getElementById('gregorian-year').value);
-        const gm = parseInt(document.getElementById('gregorian-month').value);
-        const gd = parseInt(document.getElementById('gregorian-day').value);
-        if (!gy || !gm || !gd || gy < 1900 || gy > 2100 || gm < 1 || gm > 12 || gd < 1 || gd > 31) {
+        const gy = parseInt(document.getElementById('gregorian-year').value) || 0;
+        const gm = parseInt(document.getElementById('gregorian-month').value) || 0;
+        const gd = parseInt(document.getElementById('gregorian-day').value) || 0;
+        if (gy < 1900 || gy > 2100 || gm < 1 || gm > 12 || gd < 1 || gd > 31) {
           document.getElementById('convert-result').innerHTML = '<p>لطفاً مقادیر معتبر وارد کنید</p>';
           return;
         }
@@ -1135,10 +1110,10 @@
           return;
         }
       } else {
-        const jy = parseInt(document.getElementById('jalali-year').value);
-        const jm = parseInt(document.getElementById('jalali-month').value);
-        const jd = parseInt(document.getElementById('jalali-day').value);
-        if (!jy || !jm || !jd || jy < 1300 || jy > 1500 || jm < 1 || jm > 12 || jd < 1 || jd > 31) {
+        const jy = parseInt(document.getElementById('jalali-year').value) || 0;
+        const jm = parseInt(document.getElementById('jalali-month').value) || 0;
+        const jd = parseInt(document.getElementById('jalali-day').value) || 0;
+        if (jy < 1300 || jy > 1500 || jm < 1 || jm > 12 || jd < 1 || jd > 31) {
           document.getElementById('convert-result').innerHTML = '<p>لطفاً مقادیر معتبر وارد کنید</p>';
           return;
         }
@@ -1210,7 +1185,7 @@
     }
 
     function init() {
-      const savedTheme = localStorage.getItem('theme') || 'light';
+      const savedTheme = localStorage.getItem('theme') || 'dark';
       const savedTab = localStorage.getItem('activeTab') || 'local-date';
       const savedConverterTab = localStorage.getItem('converterTab') || 'gregorian-to-jalali';
       document.body.classList.add(`${savedTheme}-theme`);
