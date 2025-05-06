@@ -1,0 +1,1240 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقویم شمسی</title>
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.6/dist/jalaali.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: right;
+    }
+
+    @font-face {
+      font-family: 'Vazirmatn';
+      src: url('https://cdn.fontcdn.ir/Fonts/Vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: color 0.3s, background 0.3s;
+      position: relative;
+    }
+
+    .background-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.4;
+      transition: transform 0.3s;
+    }
+
+    .light-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #9ca3af;
+      top: 10%;
+      left: 20%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .light-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #d1d5db;
+      top: 60%;
+      left: 70%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .light-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #9ca3af;
+      top: 30%;
+      left: 50%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .light-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #d1d5db;
+      top: 80%;
+      left: 10%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .dark-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #0a0a0a;
+      top: 15%;
+      left: 25%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .dark-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #1c2526;
+      top: 65%;
+      left: 65%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .dark-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #0a0a0a;
+      top: 35%;
+      left: 45%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .dark-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #1c2526;
+      top: 75%;
+      left: 15%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .blue-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #1e3a8a;
+      top: 10%;
+      left: 20%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .blue-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #1e40af;
+      top: 60%;
+      left: 70%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .blue-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #1e3a8a;
+      top: 30%;
+      left: 50%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .blue-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #1e40af;
+      top: 80%;
+      left: 10%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .green-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #064e3b;
+      top: 15%;
+      left: 25%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .green-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #047857;
+      top: 65%;
+      left: 65%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .green-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #064e3b;
+      top: 35%;
+      left: 45%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .green-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #047857;
+      top: 75%;
+      left: 15%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .purple-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #4c1d95;
+      top: 10%;
+      left: 20%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .purple-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #6d28d9;
+      top: 60%;
+      left: 70%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .purple-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #4c1d95;
+      top: 30%;
+      left: 50%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .purple-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #6d28d9;
+      top: 80%;
+      left: 10%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .red-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #7f1d1d;
+      top: 15%;
+      left: 25%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .red-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #b91c1c;
+      top: 65%;
+      left: 65%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .red-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #7f1d1d;
+      top: 35%;
+      left: 45%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .red-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #b91c1c;
+      top: 75%;
+      left: 15%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    .teal-theme .circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      background: #0d9488;
+      top: 10%;
+      left: 20%;
+      animation: moveCircle1 20s linear infinite alternate;
+    }
+
+    .teal-theme .circle:nth-child(2) {
+      width: 250px;
+      height: 250px;
+      background: #0f766e;
+      top: 60%;
+      left: 70%;
+      animation: moveCircle2 25s linear infinite alternate;
+    }
+
+    .teal-theme .circle:nth-child(3) {
+      width: 300px;
+      height: 300px;
+      background: #0d9488;
+      top: 30%;
+      left: 50%;
+      animation: moveCircle3 22s linear infinite alternate;
+    }
+
+    .teal-theme .circle:nth-child(4) {
+      width: 220px;
+      height: 220px;
+      background: #0f766e;
+      top: 80%;
+      left: 10%;
+      animation: moveCircle4 28s linear infinite alternate;
+    }
+
+    @keyframes moveCircle1 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50vw, 30vh); }
+    }
+
+    @keyframes moveCircle2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-40vw, -20vh); }
+    }
+
+    @keyframes moveCircle3 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(30vw, -40vh); }
+    }
+
+    @keyframes moveCircle4 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-20vw, 50vh); }
+    }
+
+    @keyframes slideInToggle {
+      from { transform: scale(0.95); opacity: 0.8; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .light-theme {
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      color: #1a1a1a;
+    }
+
+    .dark-theme {
+      background: linear-gradient(135deg, #0a0a0a, #1c2526);
+      color: #e0e0e0;
+    }
+
+    .blue-theme {
+      background: linear-gradient(135deg, #1e3a8a, #1e40af);
+      color: #e0e0e0;
+    }
+
+    .green-theme {
+      background: linear-gradient(135deg, #064e3b, #047857);
+      color: #e0e0e0;
+    }
+
+    .purple-theme {
+      background: linear-gradient(135deg, #4c1d95, #6d28d9);
+      color: #e0e0e0;
+    }
+
+    .red-theme {
+      background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+      color: #e0e0e0;
+    }
+
+    .teal-theme {
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      color: #e0e0e0;
+    }
+
+    .container {
+      max-width: 100%;
+      padding: 20px;
+      padding-bottom: 120px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      background: transparent;
+      height: calc(100vh - 80px);
+    }
+
+    .tab-content {
+      display: none;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: slideIn 0.4s ease-out;
+      margin: 0 auto;
+      margin-bottom: 20px;
+    }
+
+    .light-theme .tab-content {
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .date-display {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s;
+      overflow: hidden;
+    }
+
+    .light-theme .date-display {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .date-display:hover {
+      transform: scale(1.02);
+    }
+
+    .persian-numeric {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      font-weight: bold;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .day-name {
+      font-size: 3.2rem;
+      margin-bottom: 12px;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .day-number {
+      font-size: 9rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(248, 113, 113, 0.6);
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .month-name {
+      font-size: 2.6rem;
+      margin: 12px 0;
+      opacity: 0.9;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .year-number {
+      font-size: 2.2rem;
+      opacity: 0.9;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .gregorian-date {
+      margin-top: 16px;
+      font-size: 1.9rem;
+      opacity: 0.9;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .converter {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .converter-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .converter-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+      border-radius: 8px;
+      margin: 0 4px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .converter-tab.active {
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      color: white;
+      box-shadow: 0 2px 10px rgba(248, 113, 113, 0.5);
+      animation: slideInToggle 0.3s ease-out;
+    }
+
+    .converter-tab:hover {
+      background: rgba(248, 113, 113, 0.4);
+    }
+
+    .converter-tab i {
+      font-size: 1.2rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input, button {
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+      background: rgba(0, 0, 0, 0.2);
+      color: inherit;
+      width: 100%;
+      text-align: right;
+    }
+
+    .light-theme input {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+      opacity: 1;
+    }
+
+    .light-theme input::placeholder {
+      color: rgba(0, 0, 0, 0.7);
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+    }
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      color: white;
+      box-shadow: 0 4px 20px rgba(248, 113, 113, 0.4);
+      font-weight: 500;
+      font-size: 1rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(248, 113, 113, 0.6);
+    }
+
+    button i {
+      font-size: 1.2rem;
+    }
+
+    .server-button {
+      display: block;
+      margin: 20px auto;
+      width: 240px;
+      font-size: 1rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .server-info {
+      margin-top: 16px;
+      font-size: 1rem;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    .loader {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top: 4px solid #b91c1c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    .light-theme .loader {
+      border: 4px solid rgba(0, 0, 0, 0.2);
+      border-top: 4px solid #b91c1c;
+    }
+
+    .loader.active {
+      display: block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .tabs {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 80px;
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 0;
+      z-index: 1000;
+    }
+
+    .light-theme .tabs {
+      background: rgba(255, 255, 255, 0.3);
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+      border-radius: 8px;
+      margin: 0 4px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab-button.active {
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      color: white;
+      box-shadow: 0 2px 10px rgba(248, 113, 113, 0.5);
+    }
+
+    .tab-button:hover {
+      background: rgba(248, 113, 113, 0.4);
+    }
+
+    .tab-button i {
+      font-size: 1.2rem;
+    }
+
+    .theme-selector {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4);
+      transition: transform 0.3s;
+      z-index: 1000;
+    }
+
+    .theme-selector:hover {
+      transform: rotate(20deg);
+    }
+
+    .theme-dropdown {
+      display: none;
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      padding: 10px;
+      z-index: 1000;
+    }
+
+    .light-theme .theme-dropdown {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .theme-dropdown.active {
+      display: block;
+    }
+
+    .theme-option {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 4px;
+      text-align: right;
+      transition: background 0.2s;
+    }
+
+    .theme-option:hover {
+      background: rgba(248, 113, 113, 0.4);
+    }
+
+    #convert-result p {
+      font-size: 1.4rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      text-align: center;
+      background: linear-gradient(45deg, #b91c1c, #ea580c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 16px;
+      opacity: 0.9;
+    }
+
+    .light-theme #convert-result p {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    @media (max-width: 400px) {
+      .container {
+        padding: 15px;
+        padding-bottom: 100px;
+        height: calc(100vh - 70px);
+      }
+
+      .tabs {
+        height: 70px;
+      }
+
+      .persian-numeric {
+        font-size: 1.8rem;
+      }
+
+      .day-name {
+        font-size: 2.4rem;
+      }
+
+      .day-number {
+        font-size: 6rem;
+      }
+
+      .month-name {
+        font-size: 2rem;
+      }
+
+      .year-number {
+        font-size: 1.6rem;
+      }
+
+      .gregorian-date {
+        font-size: 1.4rem;
+      }
+
+      .tab-button {
+        font-size: 0.85rem;
+        padding: 10px;
+      }
+
+      .tab-button i {
+        font-size: 1rem;
+      }
+
+      .server-button {
+        font-size: 0.9rem;
+        width: 200px;
+      }
+
+      button {
+        font-size: 0.9rem;
+        padding: 12px;
+      }
+
+      button i {
+        font-size: 1rem;
+      }
+
+      .theme-selector {
+        width: 36px;
+        height: 36px;
+      }
+
+      .converter-tabs {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .converter-tab {
+        font-size: 0.9rem;
+        padding: 10px;
+        margin: 0 5px;
+      }
+
+      .converter-tab i {
+        font-size: 1rem;
+      }
+
+      input {
+        font-size: 1rem;
+        padding: 12px;
+      }
+
+      #convert-result p {
+        font-size: 1.2rem;
+        padding: 10px;
+      }
+
+      .theme-dropdown {
+        top: 46px;
+        padding: 8px;
+      }
+
+      .theme-option {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+      }
+
+      .circle {
+        width: 100px !important;
+        height: 100px !important;
+      }
+    }
+  </style>
+</head>
+<body class="light-theme">
+  <div class="background-shapes">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+  </div>
+  <div class="theme-selector" onclick="toggleThemeDropdown()">🎨</div>
+  <div class="theme-dropdown" id="theme-dropdown">
+    <div class="theme-option" onclick="setTheme('light')">روشن</div>
+    <div class="theme-option" onclick="setTheme('dark')">تیره</div>
+    <div class="theme-option" onclick="setTheme('blue')">آبی</div>
+    <div class="theme-option" onclick="setTheme('green')">سبز</div>
+    <div class="theme-option" onclick="setTheme('purple')">بنفش</div>
+    <div class="theme-option" onclick="setTheme('red')">قرمز</div>
+    <div class="theme-option" onclick="setTheme('teal')">فیروزه‌ای</div>
+  </div>
+  <div class="container">
+    <div id="local-date" class="tab-content active">
+      <div class="date-display" id="local-date-display"></div>
+    </div>
+    <div id="online-date" class="tab-content">
+      <div class="date-display" id="online-date-display"></div>
+      <div class="loader" id="online-loader"></div>
+      <button class="server-button" onclick="detectFastestServer()"><i class="las la-server"></i>انتخاب سریع‌ترین سرور</button>
+      <div class="server-info" id="server-info"></div>
+    </div>
+    <div id="converter" class="tab-content">
+      <div class="converter">
+        <div class="converter-tabs">
+          <div class="converter-tab active" onclick="switchConverterTab('gregorian-to-jalali')"><i class="las la-calendar"></i>میلادی به شمسی</div>
+          <div class="converter-tab" onclick="switchConverterTab('jalali-to-gregorian')"><i class="las la-calendar-alt"></i>شمسی به میلادی</div>
+        </div>
+        <div class="input-group" id="gregorian-inputs">
+          <input type="number" id="gregorian-year" placeholder="سال (مثال: ۲۰۲۵)" min="1900" max="2100">
+          <input type="number" id="gregorian-month" placeholder="ماه (۱-۱۲)" min="1" max="12">
+          <input type="number" id="gregorian-day" placeholder="روز (۱-۳۱)" min="1" max="31">
+        </div>
+        <div class="input-group" id="jalali-inputs" style="display: none;">
+          <input type="number" id="jalali-year" placeholder="سال (مثال: ۱۴۰۴)" min="1300" max="1500">
+          <input type="number" id="jalali-month" placeholder="ماه (۱-۱۲)" min="1" max="12">
+          <input type="number" id="jalali-day" placeholder="روز (۱-۳۱)" min="1" max="31">
+        </div>
+        <button onclick="convertDate()"><i class="las la-exchange-alt"></i>تبدیل</button>
+        <div id="convert-result"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab-button active" onclick="switchTab('local-date')"><i class="las la-clock"></i>تقویم محلی</div>
+    <div class="tab-button" onclick="switchTab('online-date')"><i class="las la-globe"></i>تقویم آنلاین</div>
+    <div class="tab-button" onclick="switchTab('converter')"><i class="las la-sync"></i>مبدل</div>
+  </div>
+
+  <script>
+    const persianWeekDays = ['یک‌شنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+    const persianMonths = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+    function formatDate(jalaliObj, gregorianDate) {
+      const jYear = jalaliObj.jy;
+      const jMonth = jalaliObj.jm;
+      const jDay = jalaliObj.jd;
+      const numericPersianDate = `${jYear}/${jMonth.toString().padStart(2, '0')}/${jDay.toString().padStart(2, '0')}`;
+      const gDate = new Date(gregorianDate);
+      const dayName = persianWeekDays[gDate.getDay()];
+      const monthName = persianMonths[jMonth - 1];
+      const gregorianStr = gDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      return `
+        <div class="persian-numeric">${numericPersianDate}</div>
+        <div class="day-name">${dayName}</div>
+        <div class="day-number">${jDay}</div>
+        <div class="month-name">${monthName}</div>
+        <div class="year-number">${jYear}</div>
+        <div class="gregorian-date">${gregorianStr}</div>
+      `;
+    }
+
+    function displayLocalDate() {
+      const now = new Date();
+      const jalaliObj = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      const display = document.getElementById('local-date-display');
+      if (display) {
+        display.innerHTML = formatDate(jalaliObj, now);
+      } else {
+        console.warn('Local date display element not found');
+      }
+    }
+
+    const servers = [
+      { name: 'WorldTimeAPI', url: 'https://worldtimeapi.org/api/timezone/Asia/Tehran', dateKey: 'datetime', format: 'iso' },
+      { name: 'HTTPTimeAPI', url: 'http://worldtimeapi.org/api/timezone/Asia/Tehran', dateKey: 'datetime', format: 'iso' },
+      { name: 'TimeAPI', url: 'https://timeapi.io/api/Time/current/zone?timeZone=Asia/Tehran', dateKey: 'dateTime', format: 'iso' },
+      // { name: 'TimeZoneDB', url: 'https://api.timezonedb.com/v2.1/get-time-zone?key=YOUR_TIMEZONEDB_KEY&format=json&by=zone&zone=Asia/Tehran', dateKey: 'formatted', format: 'iso' },
+      // { name: 'ApiNinjas', url: 'https://api.api-ninjas.com/v1/worldtime?tz=Asia/Tehran', dateKey: 'datetime', format: 'custom', headers: { 'X-Api-Key': 'YOUR_API_KEY' } },
+      // { name: 'AbstractAPI', url: 'https://timezone.abstractapi.com/v1/current_time/?api_key=YOUR_ABSTRACTAPI_KEY&location=Asia/Tehran', dateKey: 'datetime', format: 'iso' }
+    ];
+
+    async function fetchDateFromServer(server, retries = 2) {
+      for (let i = 0; i <= retries; i++) {
+        try {
+          const start = performance.now();
+          const headers = server.headers || {};
+          const response = await fetch(server.url, { 
+            mode: 'cors', 
+            headers,
+            cache: 'no-store',
+            signal: AbortSignal.timeout(12000)
+          });
+          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+          const data = await response.json();
+          const end = performance.now();
+
+          let dateStr = data[server.dateKey];
+          if (!dateStr) throw new Error('Date key not found');
+
+          let date;
+          if (server.format === 'iso') {
+            date = new Date(dateStr);
+          } else if (server.format === 'custom') {
+            date = new Date(dateStr.replace(' ', 'T') + 'Z');
+          } else if (server.format === 'unix') {
+            date = new Date(data[server.dateKey] * 1000);
+          }
+
+          if (isNaN(date.getTime())) throw new Error('Invalid date');
+
+          // Adjust for Asia/Tehran timezone (UTC+3:30) if server doesn't provide it
+          if (!server.url.includes('Asia/Tehran')) {
+            const tehranOffset = 3.5 * 60 * 60 * 1000;
+            date = new Date(date.getTime() + tehranOffset);
+          }
+
+          return { date, latency: end - start, server };
+        } catch (error) {
+          console.warn(`Attempt ${i + 1} failed for ${server.name}: ${error.message}`);
+          if (i === retries) return null;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      return null;
+    }
+
+    async function detectFastestServer() {
+      const loader = document.getElementById('online-loader');
+      const serverInfo = document.getElementById('server-info');
+      if (loader) {
+        loader.classList.add('active');
+      } else {
+        console.warn('Loader element not found');
+      }
+      if (serverInfo) {
+        serverInfo.textContent = 'در حال بررسی سرورها...';
+      }
+
+      const shuffledServers = servers.sort(() => Math.random() - 0.5);
+      const results = await Promise.all(shuffledServers.map(server => fetchDateFromServer(server)));
+      const validResults = results.filter(r => r !== null);
+
+      if (loader) {
+        loader.classList.remove('active');
+      }
+
+      if (validResults.length === 0) {
+        const now = new Date();
+        const jalaliObj = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        const display = document.getElementById('online-date-display');
+        if (display) {
+          display.innerHTML = formatDate(jalaliObj, now);
+        }
+        if (serverInfo) {
+          serverInfo.textContent = 'خطا: از تاریخ محلی استفاده شد';
+        }
+        return;
+      }
+
+      const fastest = validResults.reduce((prev, curr) => prev.latency < curr.latency ? prev : curr);
+      localStorage.setItem('fastestServer', fastest.server.url);
+      displayOnlineDate(fastest.date);
+      if (serverInfo) {
+        serverInfo.textContent = `سرور انتخاب‌شده: ${fastest.server.name} (پینگ: ${Math.round(fastest.latency)}ms)`;
+      }
+    }
+
+    async function loadOnlineDate() {
+      const loader = document.getElementById('online-loader');
+      const serverInfo = document.getElementById('server-info');
+      if (loader) {
+        loader.classList.add('active');
+      } else {
+        console.warn('Loader element not found');
+      }
+      if (serverInfo) {
+        serverInfo.textContent = 'در حال بارگذاری تاریخ...';
+      }
+
+      let fastestServerUrl = localStorage.getItem('fastestServer');
+      let fastestServer = servers.find(s => s.url === fastestServerUrl) || servers[0];
+      let result = await fetchDateFromServer(fastestServer);
+
+      if (!result) {
+        const shuffledServers = servers.sort(() => Math.random() - 0.5);
+        const results = await Promise.all(shuffledServers.map(server => fetchDateFromServer(server)));
+        const validResults = results.filter(r => r !== null);
+
+        if (validResults.length === 0) {
+          if (loader) {
+            loader.classList.remove('active');
+          }
+          const now = new Date();
+          const jalaliObj = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+          const display = document.getElementById('online-date-display');
+          if (display) {
+            display.innerHTML = formatDate(jalaliObj, now);
+          }
+          if (serverInfo) {
+            serverInfo.textContent = 'خطا: از تاریخ محلی استفاده شد';
+          }
+          return;
+        }
+
+        result = validResults.reduce((prev, curr) => prev.latency < curr.latency ? prev : curr);
+        localStorage.setItem('fastestServer', result.server.url);
+      }
+
+      if (loader) {
+        loader.classList.remove('active');
+      }
+      displayOnlineDate(result.date);
+      if (serverInfo) {
+        serverInfo.textContent = `سرور انتخاب‌شده: ${result.server.name} (پینگ: ${Math.round(result.latency)}ms)`;
+      }
+    }
+
+    function displayOnlineDate(date) {
+      const jalaliObj = jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+      const display = document.getElementById('online-date-display');
+      if (display) {
+        display.innerHTML = formatDate(jalaliObj, date);
+      } else {
+        console.warn('Online date display element not found');
+      }
+    }
+
+    function convertDate() {
+      const type = document.querySelector('.converter-tab.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+      let result;
+      if (type === 'gregorian-to-jalali') {
+        const gy = parseInt(document.getElementById('gregorian-year').value);
+        const gm = parseInt(document.getElementById('gregorian-month').value);
+        const gd = parseInt(document.getElementById('gregorian-day').value);
+        if (!gy || !gm || !gd || gy < 1900 || gy > 2100 || gm < 1 || gm > 12 || gd < 1 || gd > 31) {
+          document.getElementById('convert-result').innerHTML = '<p>لطفاً مقادیر معتبر وارد کنید</p>';
+          return;
+        }
+        try {
+          const jalaliObj = jalaali.toJalaali(gy, gm, gd);
+          result = `${jalaliObj.jd} ${persianMonths[jalaliObj.jm - 1]} ${jalaliObj.jy}`;
+        } catch (error) {
+          document.getElementById('convert-result').innerHTML = '<p>تاریخ نامعتبر است</p>';
+          return;
+        }
+      } else {
+        const jy = parseInt(document.getElementById('jalali-year').value);
+        const jm = parseInt(document.getElementById('jalali-month').value);
+        const jd = parseInt(document.getElementById('jalali-day').value);
+        if (!jy || !jm || !jd || jy < 1300 || jy > 1500 || jm < 1 || jm > 12 || jd < 1 || jd > 31) {
+          document.getElementById('convert-result').innerHTML = '<p>لطفاً مقادیر معتبر وارد کنید</p>';
+          return;
+        }
+        try {
+          const gregorianObj = jalaali.toGregorian(jy, jm, jd);
+          result = `${gregorianObj.gy}-${gregorianObj.gm.toString().padStart(2, '0')}-${gregorianObj.gd.toString().padStart(2, '0')}`;
+        } catch (error) {
+          document.getElementById('convert-result').innerHTML = '<p>تاریخ نامعتبر است</p>';
+          return;
+        }
+      }
+      const resultDiv = document.getElementById('convert-result');
+      if (resultDiv) {
+        resultDiv.innerHTML = `<p>نتیجه: ${result}</p>`;
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      const tab = document.getElementById(tabId);
+      const button = document.querySelector(`.tab-button[onclick="switchTab('${tabId}')"]`);
+      if (tab) {
+        tab.classList.add('active');
+      }
+      if (button) {
+        button.classList.add('active');
+      }
+      localStorage.setItem('activeTab', tabId);
+      if (tabId === 'online-date') {
+        loadOnlineDate();
+      }
+    }
+
+    function switchConverterTab(type) {
+      document.querySelectorAll('.converter-tab').forEach(tab => tab.classList.remove('active'));
+      const activeTab = document.querySelector(`.converter-tab[onclick="switchConverterTab('${type}')"]`);
+      if (activeTab) {
+        activeTab.classList.add('active');
+      }
+      const isGregorian = type === 'gregorian-to-jalali';
+      const gregorianInputs = document.getElementById('gregorian-inputs');
+      const jalaliInputs = document.getElementById('jalali-inputs');
+      if (gregorianInputs) {
+        gregorianInputs.style.display = isGregorian ? 'flex' : 'none';
+      }
+      if (jalaliInputs) {
+        jalaliInputs.style.display = isGregorian ? 'none' : 'flex';
+      }
+      localStorage.setItem('converterTab', type);
+    }
+
+    function toggleThemeDropdown() {
+      const dropdown = document.getElementById('theme-dropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('active');
+      }
+    }
+
+    function setTheme(theme) {
+      const body = document.body;
+      body.classList.remove('light-theme', 'dark-theme', 'blue-theme', 'green-theme', 'purple-theme', 'red-theme', 'teal-theme');
+      body.classList.add(`${theme}-theme`);
+      localStorage.setItem('theme', theme);
+      const dropdown = document.getElementById('theme-dropdown');
+      if (dropdown) {
+        dropdown.classList.remove('active');
+      }
+    }
+
+    function init() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      const savedTab = localStorage.getItem('activeTab') || 'local-date';
+      const savedConverterTab = localStorage.getItem('converterTab') || 'gregorian-to-jalali';
+      document.body.classList.add(`${savedTheme}-theme`);
+      switchTab(savedTab);
+      switchConverterTab(savedConverterTab);
+      displayLocalDate();
+
+      document.querySelectorAll('.converter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const type = tab.getAttribute('onclick').match(/'([^']+)'/)[1];
+          switchConverterTab(type);
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('theme-dropdown');
+        const selector = document.querySelector('.theme-selector');
+        if (selector && dropdown && !selector.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
